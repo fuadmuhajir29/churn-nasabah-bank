@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prediksi Churn Nasabah Bank</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>Prediksi Churn Nasabah Bank</h1>
+    <p>Tugas Besar Machine Learning | Fuad Muhajir Hilmi | NPM 202343501787 | Kelas Y7L</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Data Nasabah</h2>
+      <div class="alert" v-if="modelError">{{ modelError }}</div>
+
+      <label>Skor kredit (300-900)</label>
+      <input type="number" v-model.number="f.CreditScore" min="300" max="900">
+      <label>Negara</label>
+      <select v-model="f.Geography"><option>France</option><option>Germany</option><option>Spain</option></select>
+      <label>Jenis kelamin</label>
+      <select v-model="f.Gender"><option value="Male">Laki-laki</option><option value="Female">Perempuan</option></select>
+      <label>Usia (tahun)</label>
+      <input type="number" v-model.number="f.Age" min="18" max="100">
+      <label>Lama jadi nasabah (tahun, 0-10)</label>
+      <input type="number" v-model.number="f.Tenure" min="0" max="10">
+      <label>Saldo</label>
+      <input type="number" v-model.number="f.Balance" min="0">
+      <label>Jumlah produk (1-4)</label>
+      <input type="number" v-model.number="f.NumOfProducts" min="1" max="4">
+      <label>Punya kartu kredit?</label>
+      <select v-model.number="f.HasCrCard"><option :value="1">Ya</option><option :value="0">Tidak</option></select>
+      <label>Anggota aktif?</label>
+      <select v-model.number="f.IsActiveMember"><option :value="1">Ya</option><option :value="0">Tidak</option></select>
+      <label>Perkiraan gaji</label>
+      <input type="number" v-model.number="f.EstimatedSalary" min="0">
+
+      <button @click="predict" :disabled="loading">{{ loading ? 'Menghitung...' : 'PREDIKSI' }}</button>
+    </section>
+
+    <section class="card result">
+      <h2>Hasil Prediksi</h2>
+      <p class="hint" v-if="!result && !error">Isi data nasabah lalu tekan tombol PREDIKSI.</p>
+      <div class="alert" v-if="error">{{ error }}</div>
+      <div v-if="result">
+        <div class="hint">Peluang nasabah menutup rekening</div>
+        <div class="pct" :class="result.risk_level">{{ (result.churn_probability * 100).toFixed(1) }}%</div>
+        <div class="bar"><div :class="'b-' + result.risk_level" :style="{width: (result.churn_probability * 100) + '%'}"></div></div>
+        <span class="badge" :class="'b-' + result.risk_level">Risiko {{ result.risk_level }}</span>
+        <p>{{ result.advice }}</p>
+      </div>
+      <p class="hint" v-if="info && info.metrics && info.metrics.roc_auc" style="margin-top:28px">
+        Performa model pada data uji: ROC-AUC {{ info.metrics.roc_auc }}, Recall {{ info.metrics.recall }}.
+      </p>
+    </section>
+  </main>
+  <footer>Aplikasi ini dibuat untuk keperluan tugas kuliah. Hasil prediksi bukan keputusan akhir bank.</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>
+<script>
+const { createApp, reactive, ref, onMounted } = Vue;
+createApp({
+  setup() {
+    const f = reactive({ CreditScore: 619, Geography: 'France', Gender: 'Female', Age: 42, Tenure: 2,
+      Balance: 0, NumOfProducts: 1, HasCrCard: 1, IsActiveMember: 1, EstimatedSalary: 101348.88 });
+    const result = ref(null), error = ref(''), loading = ref(false), modelError = ref(''), info = ref(null);
+
+    onMounted(async () => {
+      try {
+        const h = await (await fetch('/health')).json();
+        if (!h.model_loaded) modelError.value = h.error || 'Model belum dimuat.';
+        else info.value = await (await fetch('/model-info')).json();
+      } catch (e) { modelError.value = 'Server tidak dapat dihubungi.'; }
+    });
+
+    async function predict() {
+      loading.value = true; error.value = ''; result.value = null;
+      try {
+        const r = await fetch('/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(f) });
+        const data = await r.json();
+        if (!r.ok) error.value = typeof data.detail === 'string' ? data.detail : 'Data belum valid. Periksa kembali isian Anda.';
+        else result.value = data;
+      } catch (e) { error.value = 'Gagal menghubungi server.'; }
+      loading.value = false;
+    }
+    return { f, result, error, loading, modelError, info, predict };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "features": [
+    "CreditScore",
+    "Age",
+    "Tenure",
+    "Balance",
+    "NumOfProducts",
+    "HasCrCard",
+    "IsActiveMember",
+    "EstimatedSalary",
+    "Geography_France",
+    "Geography_Germany",
+    "Geography_Spain",
+    "Gender_Male"
+  ],
+  "mean": {
+    "CreditScore": 651.2605882352941,
+    "Age": 39.03764705882353,
+    "Tenure": 5.031470588235294,
+    "Balance": 76736.8449632353,
+    "NumOfProducts": 1.5282352941176471,
+    "EstimatedSalary": 99769.19899852942
+  },
+  "std": {
+    "CreditScore": 96.72138675864434,
+    "Age": 10.534518459862735,
+    "Tenure": 2.90925827109122,
+    "Balance": 62169.01633968904,
+    "NumOfProducts": 0.5834631966859587,
+    "EstimatedSalary": 57330.20156798451
+  },
+  "threshold": 0.08,
+  "metrics": {
+    "roc_auc": 0.856,
+    "recall": 0.875,
+    "precision": 0.361,
+    "f1": 0.511
+  }
+}
